@@ -7,10 +7,12 @@ set(PYBIND_SRCS pybind.cc exception.cc protobuf.cc const_value.cc recordio.cc as
 
 if(WITH_PYTHON)
   if(WITH_AMD_GPU)
+    set(_hip_pybind_deps ${PYBIND_DEPS} ${GLOB_OP_LIB} ${GLOB_OPERATOR_DEPS})
+    list(REMOVE_DUPLICATES _hip_pybind_deps)
     hip_library(paddle_pybind SHARED
       SRCS ${PYBIND_SRCS}
-      DEPS ARCHIVE_START ${PYBIND_DEPS}
-      ${GLOB_OP_LIB} ${GLOB_OPERATOR_DEPS} ARCHIVE_END)
+      DEPS ARCHIVE_START ${_hip_pybind_deps}
+      ARCHIVE_END)
   else()
     cc_library(paddle_pybind SHARED
       SRCS ${PYBIND_SRCS}
