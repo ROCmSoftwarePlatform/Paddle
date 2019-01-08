@@ -591,7 +591,7 @@ All parameter, weight, gradient are variables in Paddle.
           .def_static("create",
                 [](paddle::platform::CUDAPinnedPlace& place)
                         -> paddle::platform::DeviceContext* {
-#ifndef PADDLE_WITH_CUDA
+#if !(defined(PADDLE_WITH_CUDA) || defined(PADDLE_WITH_HIP))
                   PADDLE_THROW(
                         "CUDAPinnedPlace is not supported in CPU device.");
 #else

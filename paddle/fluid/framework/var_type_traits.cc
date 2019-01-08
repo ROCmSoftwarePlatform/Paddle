@@ -19,13 +19,17 @@
 #include "paddle/fluid/framework/selected_rows.h"
 #include "paddle/fluid/operators/reader/lod_tensor_blocking_queue.h"
 #include "paddle/fluid/platform/macros.h"
-#ifdef PADDLE_WITH_CUDA
+#if defined(PADDLE_WITH_CUDA) || defined(PADDLE_WITH_HIP)
 #ifndef _WIN32
 #include "paddle/fluid/operators/nccl/nccl_gpu_common.h"
 #endif
+#ifdef PADDLE_WITH_HIP
+#include <miopen/miopen.h>
+#else
 #include <cudnn.h>
-#include "paddle/fluid/operators/conv_cudnn_op_cache.h"
 #include "paddle/fluid/operators/cudnn_rnn_cache.h"
+#endif
+#include "paddle/fluid/operators/conv_cudnn_op_cache.h"
 #endif
 
 namespace paddle {

@@ -27,7 +27,10 @@
 #ifndef _WIN32
 #include <nccl.h>
 #endif
-
+#endif
+#ifdef PADDLE_WITH_HIP
+#include <rccl.h>
+#include "paddle/fluid/operators/nccl/nccl_gpu_common.h"
 #endif
 
 // Users should add forward declarations here
@@ -145,13 +148,13 @@ using VarTypeRegistry = detail::VarTypeRegistryImpl<
 #ifndef _WIN32
     ncclUniqueId, platform::Communicator,
 #endif
-#ifdef PADDLE_WITH_HIP
-    rcclUniqueId, platform::Communicator,
-#endif
     operators::AlgorithmsCache<cudnnConvolutionFwdAlgo_t>,
     operators::AlgorithmsCache<cudnnConvolutionBwdDataAlgo_t>,
     operators::AlgorithmsCache<cudnnConvolutionBwdFilterAlgo_t>,
     operators::CudnnRNNCache,
+#endif
+#ifdef PADDLE_WITH_HIP
+    rcclUniqueId, platform::Communicator,
 #endif
     int, float>;
 

@@ -17,7 +17,11 @@ limitations under the License. */
 #include <functional>
 #include <unordered_map>
 #include <vector>
+#ifdef PADDLE_WITH_HIP
+#include "paddle/fluid/platform/miopen_helper.h"
+#else
 #include "paddle/fluid/platform/cudnn_helper.h"
+#endif
 
 DECLARE_uint64(conv_workspace_size_limit);
 DECLARE_bool(cudnn_exhaustive_search);
@@ -33,6 +37,7 @@ static constexpr char kCUDNNBwdFilterAlgoCache[] = "kCUDNNBwdFilterAlgoCache";
 static constexpr size_t kCONV_CUDNN_WORKSPACE_LIMIT_BYTES =
     static_cast<size_t>(1024) * 1024 * 1024;
 
+#ifdef PADDLE_WITH_CUDA
 #if CUDNN_VERSION_MIN(6, 0, 5)
 static constexpr size_t kNUM_CUDNN_FWD_ALGS = CUDNN_CONVOLUTION_FWD_ALGO_COUNT;
 static constexpr size_t kNUM_CUDNN_BWD_FILTER_ALGS =
@@ -44,6 +49,7 @@ static constexpr size_t kNUM_CUDNN_BWD_DATA_ALGS =
 static constexpr size_t kNUM_CUDNN_FWD_ALGS = 7;
 static constexpr size_t kNUM_CUDNN_BWD_FILTER_ALGS = 4;
 static constexpr size_t kNUM_CUDNN_BWD_DATA_ALGS = 5;
+#endif
 #endif
 
 template <typename TAlgorithm>

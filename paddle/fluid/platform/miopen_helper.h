@@ -45,9 +45,20 @@ enum class DataLayout {  // Not use
 };
 
 enum class PoolingMode {
-
   kMaximum,
-  kAverage,
+  kMaximumDeterministic,
+  kAverageExclusive,
+  kAverageInclusive,
+};
+
+enum ActivationMode {
+  kNone,  // activation identity
+  kSigmoid,
+  kRelu,
+  kRelu6,
+  kReluX,
+  kTanh,
+  kBandPass,
 };
 
 inline miopenPoolingMode_t GetPoolingMode(const PoolingMode& mode) {
