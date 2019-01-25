@@ -16,7 +16,11 @@ limitations under the License. */
 #include <stdio.h>
 #include <string>
 #include <vector>
-#include "cub/cub.cuh"
+#if defined(PADDLE_WITH_CUDA)
+#include <cub/cub.cuh>
+#elif defined(PADDLE_WITH_HIP)
+#include <hipcub/hipcub.hpp>
+#endif
 #include "paddle/fluid/framework/mixed_vector.h"
 #include "paddle/fluid/framework/op_registry.h"
 #include "paddle/fluid/memory/memory.h"
@@ -46,6 +50,7 @@ struct RangeInitFunctor {
   int start_;
   int delta_;
   int *out_;
+  RangeInitFunctor(int start, int delta, int *out):start_(start), delta_(delta), out_(out) { }
   __device__ void operator()(size_t i) { out_[i] = start_ + i * delta_; }
 };
 
@@ -66,7 +71,7 @@ static void SortDescending(const platform::CUDADeviceContext &ctx,
 
   // Determine temporary device storage requirements
   size_t temp_storage_bytes = 0;
-  cub::DeviceRadixSort::SortPairsDescending<T, int>(
+  hipcub::DeviceRadixSort::SortPairsDescending<T, int>(
       nullptr, temp_storage_bytes, keys_in, keys_out, idx_in, idx_out, num);
   // Allocate temporary storage
   auto place = boost::get<platform::CUDAPlace>(ctx.GetPlace());
@@ -74,7 +79,7 @@ static void SortDescending(const platform::CUDADeviceContext &ctx,
       memory::Alloc(place, temp_storage_bytes, memory::Allocator::kScratchpad);
 
   // Run sorting operation
-  cub::DeviceRadixSort::SortPairsDescending<T, int>(
+  hipcub::DeviceRadixSort::SortPairsDescending<T, int>(
       d_temp_storage->ptr(), temp_storage_bytes, keys_in, keys_out, idx_in,
       idx_out, num);
 }
@@ -262,7 +267,7 @@ static void NMS(const platform::CUDADeviceContext &ctx, const Tensor &proposals,
   const T *boxes = proposals.data<T>();
   auto place = boost::get<platform::CUDAPlace>(ctx.GetPlace());
   framework::Vector<uint64_t> mask(boxes_num * col_blocks);
-  NMSKernel<<<blocks, threads>>>(
+  hipLaunchKernelGGL(NMSKernel, dim3(blocks), dim3(threads),0,0,
       boxes_num, nms_threshold, boxes,
       mask.CUDAMutableData(boost::get<platform::CUDAPlace>(ctx.GetPlace())));
 
@@ -323,7 +328,7 @@ static std::pair<Tensor, Tensor> ProposalForOneImage(
   keep_num_t.mutable_data<int>({1}, ctx.GetPlace());
   min_size = std::max(min_size, 1.0f);
   auto stream = ctx.stream();
-  FilterBBoxes<T, 512><<<1, 512, 0, stream>>>(
+  hipLaunchKernelGGL((FilterBBoxes<T, 512>), dim3(1), dim3(512), 0, stream,
       proposals.data<T>(), im_info.data<T>(), min_size, pre_nms_num,
       keep_num_t.data<int>(), keep_index.data<int>());
   int keep_num;
