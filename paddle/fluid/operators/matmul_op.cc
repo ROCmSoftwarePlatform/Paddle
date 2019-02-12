@@ -305,13 +305,15 @@ class MatMulOp : public framework::OperatorWithKernel {
       dim_out = {mat_dim_x.height_, mat_dim_y.width_};
     }
 
-    if (dim_x.size() == 1 && dim_out[dim_out.size() - 2] == 1) {
-      std::swap(dim_out[dim_out.size() - 2], dim_out[dim_out.size() - 1]);
-      dim_out.resize(dim_out.size() - 1);
+    int dsize = dim_out.size();
+    if (dim_x.size() == 1 && dim_out[dsize - 2] == 1) {
+      std::swap(dim_out[dsize - 2], dim_out[dsize - 1]);
+      dim_out.resize(dsize - 1);
     }
 
-    if (dim_y.size() == 1 && dim_out[dim_out.size() - 1] == 1) {
-      dim_out.resize(dim_out.size() - 1);
+    dsize = dim_out.size();
+    if (dim_y.size() == 1 && dim_out[dsize - 1] == 1) {
+      dim_out.resize(dsize - 1);
     }
 
     if (dim_out.empty()) {
