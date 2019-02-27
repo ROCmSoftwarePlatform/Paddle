@@ -424,15 +424,24 @@ class EigenHipStreamDevice : public Eigen::StreamInterface {
   }
 
   void* allocate(size_t num_bytes) const override {
+    if (UNLIKELY(num_bytes == 0)) {
+      return nullptr;
+    }
     auto buf = paddle::memory::Alloc(place_, num_bytes,
                                      memory::Allocator::kScratchpad);
     void* retv = buf->ptr();
-    allocations_[buf->ptr()] = std::move(buf);
+    {
+      std::lock_guard<std::mutex> lock(mtx_);
+      allocations_.emplace(retv, std::move(buf));
+    }
     return retv;
   }
 
   void deallocate(void* buffer) const override {
-    allocations_.erase(allocations_.find(buffer));
+    if (LIKELY(buffer)) {
+      std::lock_guard<std::mutex> lock(mtx_);
+      allocations_.erase(buffer);
+    }
   }
 
   void* scratchpad() const override {
@@ -459,6 +468,7 @@ class EigenHipStreamDevice : public Eigen::StreamInterface {
   const hipDeviceProp_t* device_prop_;  // not owned;
   mutable void* scratch_;
   mutable unsigned int* semaphore_;
+  mutable std::mutex mtx_;  // to protect allocations_
   mutable std::unordered_map<void*, memory::AllocationPtr> allocations_;
 };
 
